@@ -1,0 +1,12 @@
+pandas
+numpy
+requests
+neo4j
+sentence-transformers
+scikit-learn
+lightgbm
+fastapi
+uvicorn
+faiss-cpu
+python-dotenv
+shap
