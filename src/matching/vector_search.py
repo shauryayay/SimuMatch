@@ -8,5 +8,5 @@ def embed_text(text):
 
 if __name__ == "__main__":
     df = pd.read_csv("data/processed/athletes_clean.csv")
-    df["emb"] = df["name"].apply(lambda x: embed_text(x))
+    df["emb"] = df["Name"].apply(lambda x: embed_text(x))
     print("Embeddings generated")
