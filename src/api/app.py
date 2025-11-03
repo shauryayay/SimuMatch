@@ -4,7 +4,7 @@ app = FastAPI(title="SimuMatch API")
 
 @app.get("/")
 def root():
-    return {"msg":"SimuMatch backend online 💪🔥"}
+    return {"msg":"SimuMatch backend online"}
 
 @app.get("/match/{athlete_id}")
 def get_match(athlete_id: str):
