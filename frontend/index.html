@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SimuMatch — Event Recommender</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="card">
+    <h1>SimuMatch</h1>
+    <p>Realtime event recommender for your athlete</p>
+
+    <button id="btnMatch">Get Athlete Suitability</button>
+    <div id="summary"></div>
+
+    <hr/>
+
+    <h3>Find real events near:</h3>
+    <label>Location (city) <input id="loc" placeholder="e.g., London, UK" /></label>
+    <label>Radius (km) <input id="radius" type="number" value="50" /></label>
+    <button id="btnEvents">Search Events</button>
+
+    <div id="events"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

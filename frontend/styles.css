@@ -1,0 +1,5 @@
+body{font-family:Arial, Helvetica, sans-serif;background:#f4f6fb;padding:30px}
+.card{max-width:760px;margin:0 auto;background:white;padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+button{background:#0078ff;color:#fff;padding:10px 14px;border:0;border-radius:8px;cursor:pointer}
+label{display:block;margin-top:10px}
+#events .ev{padding:8px;border-bottom:1px solid #eee}
