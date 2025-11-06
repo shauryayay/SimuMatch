@@ -133,7 +133,7 @@ or
 python src/graph/build_graph.py
 ```
 
-#### Run event recommender
+#### Run event recommender (in python)
 
 ```python
 from src.matching.match_engine import recommend_events
