@@ -71,7 +71,7 @@ Follow these steps to run SimuMatch on your machine.
 git clone https://github.com/shauryayay/SimuMatch.git
 cd SimuMatch
 ```
-#### 2. Create a subfolder processed under data
+#### 2. Create a subfolder processed under data on local machine
 
 data/processed
 
@@ -121,6 +121,13 @@ python src/matching/vector_search.py
 python src/matching/event_embeddings.py
 ```
 
+#### Run event recommender (in python)
+
+```python
+from src.matching.match_engine import recommend_events
+print(recommend_events("Usain Bolt"))
+```
+
 #### Build graph
 
 ```bash
@@ -133,12 +140,6 @@ or
 python src/graph/build_graph.py
 ```
 
-#### Run event recommender (in python)
-
-```python
-from src.matching.match_engine import recommend_events
-print(recommend_events("Usain Bolt"))
-```
 
 ---
 
