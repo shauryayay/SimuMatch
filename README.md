@@ -17,12 +17,15 @@ Enable intelligent athlete-event matchmaking using machine learning + graph inte
 
 ## 📦 Data Used
 
+
 We currently use **Olympic athlete & event datasets** (Kaggle / open-source) containing:
 
 * Athlete ID, Name, Age
 * Country / Team
 * Sport & Event
 * Physical data: Height, Weight
+
+link: [https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results?resource=download](https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results)
 
 We clean and process this data to generate **feature text** and embeddings.
 
@@ -62,14 +65,14 @@ Follow these steps to run SimuMatch on your machine.
 
 ### 🛠️ Setup
 
-#### 1️⃣ Clone the repo
+#### 1. Clone the repo
 
 ```bash
-git clone https://github.com/yourusername/SimuMatch.git
+git clone https://github.com/shauryayay/SimuMatch.git
 cd SimuMatch
 ```
 
-#### 2️⃣ Create & activate virtual env
+#### 2. Create & activate virtual env
 
 ```bash
 python3 -m venv venv
@@ -77,13 +80,13 @@ source venv/bin/activate   # mac/linux
 venv\Scripts\activate      # windows
 ```
 
-#### 3️⃣ Install dependencies
+#### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 4️⃣ Add your `.env` file
+#### 4. Add your `.env` file
 
 Create `.env`:
 
@@ -93,7 +96,14 @@ NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_password
 ```
+#### 5. Neo4j Desktop
+Download: https://neo4j.com/download/ 
 
+Steps:
+1. Create a new DB
+2. Start it
+3. Note URI + user + password
+4. Put them in .env
 ---
 
 
@@ -102,13 +112,22 @@ NEO4J_PASSWORD=your_password
 #### Generate embeddings
 
 ```bash
-python src/embeddings/generate_embeddings.py
+python src/matching/vector_search.py
+```
+```bash
+python src/matching/event_embeddings.py
 ```
 
 #### Build graph
 
 ```bash
 python -m src.graph.build_graph
+```
+
+or
+
+```bash
+python src/graph/build_graph.py
 ```
 
 #### Run event recommender
