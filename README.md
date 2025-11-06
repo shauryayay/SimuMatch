@@ -71,8 +71,11 @@ Follow these steps to run SimuMatch on your machine.
 git clone https://github.com/shauryayay/SimuMatch.git
 cd SimuMatch
 ```
+#### 2. Create a subfolder processed under data
 
-#### 2. Create & activate virtual env
+data/processed
+
+#### 3. Create & activate virtual env
 
 ```bash
 python3 -m venv venv
@@ -80,13 +83,13 @@ source venv/bin/activate   # mac/linux
 venv\Scripts\activate      # windows
 ```
 
-#### 3. Install dependencies
+#### 4. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 4. Add your `.env` file
+#### 5. Add your `.env` file
 
 Create `.env`:
 
@@ -96,7 +99,7 @@ NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_password
 ```
-#### 5. Neo4j Desktop
+#### 6. Neo4j Desktop
 Download: https://neo4j.com/download/ 
 
 Steps:
