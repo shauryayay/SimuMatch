@@ -17,7 +17,6 @@ Enable intelligent athlete-event matchmaking using machine learning + graph inte
 
 ## 📦 Data Used
 
-
 We currently use **Olympic athlete & event datasets** (Kaggle / open-source) containing:
 
 * Athlete ID, Name, Age
@@ -25,110 +24,110 @@ We currently use **Olympic athlete & event datasets** (Kaggle / open-source) con
 * Sport & Event
 * Physical data: Height, Weight
 
-link: [https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results?resource=download](https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results)
+Dataset link:  
+https://www.kaggle.com/datasets/heesoo37/120-years-of-olympic-history-athletes-and-results
 
 We clean and process this data to generate **feature text** and embeddings.
 
-### Matching Logic
+---
+
+## 🧠 Matching Logic
 
 We generate embeddings from text features like:
 
 ```
+
 name + age + sex + country + sport + event
-```
 
-Then we compute **cosine similarity** between athletes & event vectors.
+````
 
-**Pipeline:**
+Then compare athlete → event similarity using **cosine similarity**.
 
+**Pipeline Flow:**
 1. Preprocess data
-2. Create feature text for athletes & events
-3. Generate embeddings (OpenAI model)
-4. Save embeddings to disk
-5. Build graph in Neo4j (athletes, sports, events relationships)
-6. Recommend events by similarity search
+2. Create combined feature text
+3. Generate embeddings (SentenceTransformer model)
+4. Save embeddings locally (not version-controlled)
+5. (Optional) Build graph in Neo4j
+6. Recommend events using similarity search
 
 ---
 
 ## ⚙️ Local Setup Guide
 
-Follow these steps to run SimuMatch on your machine.
-
 ### ✅ Requirements
-
 * Python 3.9+
-* Neo4j Desktop / Aura DB
-* Virtual environment
 * Git
+* Virtual environment
+* Neo4j (optional for now)
 
 ---
 
 ### 🛠️ Setup
 
 #### 1. Clone the repo
-
 ```bash
 git clone https://github.com/shauryayay/SimuMatch.git
 cd SimuMatch
+````
+
+#### 2. Ensure data folders exist
+
+```bash
+mkdir -p data/raw
+mkdir -p data/processed
 ```
-#### 2. Create a subfolder processed under data on local machine
 
-data/processed
+> Note: `data/processed/` is intentionally **not** stored in Git.
+> Everyone generates their own embedded data locally.
 
-#### 3. Create & activate virtual env
+#### 3. Create & activate virtual environment
 
 ```bash
 python3 -m venv venv
-source venv/bin/activate   # mac/linux
-venv\Scripts\activate      # windows
+source venv/bin/activate       # mac/linux
+venv\Scripts\activate          # windows
 ```
 
 #### 4. Install dependencies
 
+⚠️ **IMPORTANT: install PyTorch separately (CPU version)**
+
 ```bash
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
-#### 5. Add your `.env` file
-
-Create `.env`:
-
-```
-OPENAI_API_KEY=your_key
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_password
-```
-#### 6. Neo4j Desktop
-Download: https://neo4j.com/download/ 
-
-Steps:
-1. Create a new DB
-2. Start it
-3. Note URI + user + password
-4. Put them in .env
 ---
 
-
-### Run Pipeline
-
-#### Generate embeddings
+### Generate Embeddings (must do before using the recommender)
 
 ```bash
 python src/matching/vector_search.py
-```
-```bash
 python src/matching/event_embeddings.py
 ```
 
-#### Run event recommender (in python)
+This will create:
+
+```
+data/processed/athletes_with_embeddings.csv
+data/processed/events_with_embeddings.csv
+data/athlete_vectors.npy
+data/event_vectors.npy
+```
+
+---
+
+### Run Recommender
 
 ```python
 from src.matching.match_engine import recommend_events
 print(recommend_events("Usain Bolt"))
 ```
 
-#### Build graph
+---
+
+### (Optional) Build the Knowledge Graph in Neo4j
 
 ```bash
 python -m src.graph.build_graph
@@ -140,12 +139,9 @@ or
 python src/graph/build_graph.py
 ```
 
-
 ---
 
-## 🎯 Output
-
-Example Response:
+## 🎯 Example Output
 
 ```
 Top recommended events for Usain Bolt:
@@ -153,6 +149,4 @@ Top recommended events for Usain Bolt:
 - 200m Sprint
 - 4×100m Relay
 ```
-
-
 
