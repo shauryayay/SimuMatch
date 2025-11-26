@@ -99,6 +99,18 @@ pip install -r requirements.txt
 ```
 
 ---
+### Run prerocess
+
+```bash
+python src/data_pipeline/preprocess.py
+```
+This will create:
+
+```
+data/processed/clean_athletes.csv
+```
+
+---
 
 ### Generate Embeddings (must do before using the recommender)
 

@@ -1,138 +1,141 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-
-# Load processed data
-athlete_df = pd.read_csv("data/processed/athletes_with_embeddings.csv")
-event_df = pd.read_csv("data/processed/events_with_embeddings.csv")
-
-# Load embeddings
-ath_embeddings = np.load("data/athlete_vectors.npy", allow_pickle=True)
-event_embeddings = np.load("data/event_vectors.npy", allow_pickle=True)
-
-# Attach embeddings to dataframes (aligned by row order)
-athlete_df["emb"] = list(ath_embeddings)
-event_df["emb"] = list(event_embeddings)
-
 import re
 
-# Decide which column is the name column
-NAME_COL = "name" if "name" in athlete_df.columns else "Name"
+# -----------------------------
+# Load data
+# -----------------------------
+athlete_df = pd.read_csv("data/processed/athletes_with_embeddings.csv")
+event_df   = pd.read_csv("data/processed/events_with_embeddings.csv")
 
-# Clean names and precompute first / last name for robust matching
+# Load embeddings
+ath_embeddings  = np.load("data/athlete_vectors.npy", allow_pickle=True)
+event_embeddings = np.load("data/event_vectors.npy", allow_pickle=True)
+
+# Attach embeddings to dataframes
+athlete_df["emb"] = list(ath_embeddings)
+event_df["emb"]   = list(event_embeddings)
+
+# Normalize ALL column names to lowercase internally
+athlete_df.columns = [c.lower() for c in athlete_df.columns]
+event_df.columns   = [c.lower() for c in event_df.columns]
+
+# -----------------------------
+# Helper: Robust Name Matching
+# -----------------------------
+def _clean_name(n: str):
+    n = str(n).lower()
+    n = re.sub(r"[^a-z ]", " ", n)
+    return " ".join(n.split())
+
 def _split_first_last(full_name: str):
-    full_name = str(full_name).lower()
-    # keep only letters and spaces
-    full_name = re.sub(r"[^a-z ]", " ", full_name)
-    tokens = [t for t in full_name.split() if t]
+    full_name = _clean_name(full_name)
+    tokens = full_name.split()
     if not tokens:
         return None, None
     return tokens[0], tokens[-1]
 
-firsts = []
-lasts = []
-for n in athlete_df[NAME_COL].astype(str):
-    f, l = _split_first_last(n)
-    firsts.append(f)
-    lasts.append(l)
+athlete_df["_first"] = athlete_df["name"].apply(lambda x: _split_first_last(x)[0])
+athlete_df["_last"]  = athlete_df["name"].apply(lambda x: _split_first_last(x)[1])
 
-athlete_df["_first_name"] = firsts
-athlete_df["_last_name"] = lasts
-
-
-
-def find_athlete_index(name: str):
+def find_athlete_index(query: str):
     """
-    Robust athlete name matcher:
-    1. exact match on full name
-    2. match on first + last name (e.g. 'usain bolt' -> 'Usain St. Leo Bolt')
-    3. full substring match
-    4. ALL tokens must appear (AND)
+    Hierarchy:
+    1) exact full-name match
+    2) first+last name match
+    3) substring match
+    4) all tokens present
     """
-    name = name.lower().strip()
 
-    name_col = "name" if "name" in athlete_df.columns else "Name"
-    names = athlete_df[name_col].astype(str).str.lower()
+    q_clean = _clean_name(query)
+    tokens  = q_clean.split()
 
-    # 1) exact match (full string)
-    exact = athlete_df[names == name]
+    # exact
+    exact = athlete_df[athlete_df["name"].str.lower() == q_clean]
     if len(exact) > 0:
         return exact.index[0]
 
-    # Prepare query tokens
-    import re
-    cleaned = re.sub(r"[^a-z ]", " ", name)
-    tokens = [t for t in cleaned.split() if t]
-
-    # 2) first + last name match (best for cases like 'Usain Bolt')
+    # first + last
     if len(tokens) >= 2:
-        q_first, q_last = tokens[0], tokens[-1]
-        mask_fl = (athlete_df["_first_name"] == q_first) & (athlete_df["_last_name"] == q_last)
-        fl_matches = athlete_df[mask_fl]
-        if len(fl_matches) > 0:
-            return fl_matches.index[0]
+        qf, ql = tokens[0], tokens[-1]
+        fl = athlete_df[
+            (athlete_df["_first"] == qf) &
+            (athlete_df["_last"]  == ql)
+        ]
+        if len(fl) > 0:
+            return fl.index[0]
 
-    # 3) full substring
-    contains = athlete_df[names.str.contains(name, na=False)]
-    if len(contains) > 0:
-        return contains.index[0]
+    # substring
+    substr = athlete_df[athlete_df["name"].str.lower().str.contains(q_clean)]
+    if len(substr) > 0:
+        return substr.index[0]
 
-    # 4) ALL tokens must be present (AND)
+    # all tokens must appear
     if tokens:
-        mask = pd.Series(True, index=names.index)
+        mask = pd.Series(True, index=athlete_df.index)
         for t in tokens:
-            mask &= names.str.contains(t, na=False)
-        all_tokens = athlete_df[mask]
-        if len(all_tokens) > 0:
-            return all_tokens.index[0]
+            mask &= athlete_df["name"].str.lower().str.contains(t)
+        all_toks = athlete_df[mask]
+        if len(all_toks) > 0:
+            return all_toks.index[0]
 
-    # nothing reasonable found
     return None
 
-def recommend_events(name: str, top_k: int = 5):
+# -----------------------------
+# Main Recommendation Function
+# -----------------------------
+def recommend_events(name: str, top_k=5):
     idx = find_athlete_index(name)
     if idx is None:
         return f"Athlete '{name}' not found."
-    
-    print("DEBUG matched athlete:", athlete_df.loc[idx, ["name", "Sport", "Sex"]].to_dict())
 
-    athlete_row = athlete_df.loc[idx]
+    athlete = athlete_df.loc[idx]
 
-    # Embed
-    athlete_vector = np.array(athlete_row["emb"]).reshape(1, -1)
+    # Debug info (now casing-proof)
+    debug_display = {
+        "name": athlete.get("name"),
+        "sport": athlete.get("sport"),
+        "sex": athlete.get("sex")
+    }
+    print("DEBUG athlete match:", debug_display)
 
-    # Athlete sport & sex from original columns
-    sport = athlete_row.get("Sport", None)
-    sex = athlete_row.get("Sex", None)
+    # Get vector
+    athlete_vector = np.array(athlete["emb"]).reshape(1, -1)
+
+    # Extract metadata
+    sport = athlete.get("sport", None)
+    sex   = athlete.get("sex", None)
 
     filtered = event_df.copy()
 
-    # 1) Filter by sport if possible
-    if pd.notnull(sport) and "sport" in filtered.columns:
+    # Sport filter
+    if pd.notnull(sport):
         filtered = filtered[filtered["sport"] == sport]
 
-    # 2) Filter by sex if possible
+    # Sex filter
     if pd.notnull(sex) and "event_sex" in filtered.columns:
         filtered = filtered[filtered["event_sex"] == sex]
 
-    # Fallbacks if filter is too strict
-    if filtered.empty and pd.notnull(sport) and "sport" in event_df.columns:
+    # fallback #1 — if filtering got too strict
+    if len(filtered) == 0 and pd.notnull(sport):
         filtered = event_df[event_df["sport"] == sport]
 
-    if filtered.empty:
+    # fallback #2 — just recommend anything
+    if len(filtered) == 0:
         filtered = event_df.copy()
 
-    # Build matrix for filtered events
-    event_matrix = np.vstack(filtered["emb"].to_list())
-    sims = cosine_similarity(athlete_vector, event_matrix)[0]
+    # Compute similarities
+    matrix = np.vstack(filtered["emb"].to_list())
+    sims   = cosine_similarity(athlete_vector, matrix)[0]
 
-    top_indices = sims.argsort()[::-1][:top_k]
-    top_events = filtered.iloc[top_indices].copy()
-    top_events["similarity"] = sims[top_indices]
+    # Pick top-k
+    top_idx = sims.argsort()[::-1][:top_k]
+    top = filtered.iloc[top_idx].copy()
+    top["similarity"] = sims[top_idx]
 
-    return top_events[["sport", "event", "event_sex", "similarity"]].reset_index(drop=True)
+    return top[["sport", "event", "event_sex", "similarity"]].reset_index(drop=True)
 
-
+# For CLI testing
 if __name__ == "__main__":
-    print(recommend_events("Usain St. Leo Bolt", top_k=5))
-
+    print(recommend_events("Usain Bolt", top_k=5))
