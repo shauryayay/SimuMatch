@@ -1,44 +1,43 @@
+# src/matching/vector_search.py
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
+import os
 
-print("Loading cleaned athlete data...")
-df = pd.read_csv("data/processed/clean_athletes.csv")
+def generate_athlete_embeddings(
+        input_path="data/processed/clean_athletes.csv",
+        output_csv="data/processed/athletes_with_embeddings.csv",
+        output_npy="data/athlete_vectors.npy"):
 
-# -------------------------
-# 1. Vectorized text generation (NO apply)
-# -------------------------
-def safe(x): 
-    return "" if pd.isna(x) else str(x)
+    print("Generating athlete embeddings...")
+    df = pd.read_csv(input_path)
 
-df["profile_text"] = (
-      df["name"].map(safe)
-    + " | " + df["sex"].map(lambda x: "male" if x=="M" else ("female" if x=="F" else ""))
-    + " | " + df["age"].map(lambda x: f"{int(x)} years old" if pd.notna(x) else "")
-    + " | " + df["height"].map(lambda x: f"height {int(x)} cm" if pd.notna(x) else "")
-    + " | " + df["weight"].map(lambda x: f"weight {int(x)} kg" if pd.notna(x) else "")
-    + " | " + df["team"].map(lambda x: f"team {x}" if pd.notna(x) else "")
-    + " | " + df["noc"].map(lambda x: f"noc {x}" if pd.notna(x) else "")
-    + " | plays " + df["sport"].map(safe)
-    + " | competes in " + df["event"].map(safe)
-)
+    # Vectorized text creation (fast)
+    def safe(x): 
+        return "" if pd.isna(x) else str(x)
 
-df["profile_text"] = df["profile_text"].str.replace(r"\s+", " ", regex=True)
+    df["profile_text"] = (
+          df["name"].map(safe)
+        + " | " + df["sex"].map(lambda x: "male" if x=="M" else ("female" if x=="F" else ""))
+        + " | " + df["age"].map(lambda x: f"{int(x)} years old" if pd.notna(x) else "")
+        + " | " + df["team"].map(lambda x: f"team {x}" if pd.notna(x) else "")
+        + " | plays " + df["sport"].map(safe)
+        + " | competes in " + df["event"].map(safe)
+    )
 
-print("Loading embedding model...")
-model = SentenceTransformer("sentence-transformers/paraphrase-MiniLM-L6-v2")
+    model = SentenceTransformer("sentence-transformers/paraphrase-MiniLM-L6-v2")
+    texts = df["profile_text"].tolist()
 
-texts = df["profile_text"].tolist()
+    embeddings = model.encode(texts, batch_size=64, show_progress_bar=True)
 
-print("Encoding athlete embeddings (batched)...")
-embeddings = model.encode(texts, batch_size=64, show_progress_bar=True)
+    df["emb"] = embeddings.tolist()
 
-df["emb"] = embeddings.tolist()
+    np.save(output_npy, embeddings)
+    df.to_csv(output_csv, index=False)
 
-# -------------------------
-# Save outputs
-# -------------------------
-np.save("data/athlete_vectors.npy", np.array(embeddings))
-df.to_csv("data/processed/athletes_with_embeddings.csv", index=False)
+    print("Athlete embeddings saved!")
+    return df
 
-print("Athlete embeddings generated!")
+
+if __name__ == "__main__":
+    generate_athlete_embeddings()
