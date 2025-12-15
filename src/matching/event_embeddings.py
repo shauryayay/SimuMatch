@@ -8,7 +8,7 @@ def generate_event_embeddings(
     output_csv="data/processed/events_with_embeddings.csv",
     output_npy="data/event_vectors.npy"
 ):
-    print("🏅 Generating event embeddings...")
+    print("Generating event embeddings...")
 
     df = pd.read_csv(input_path)
 
