@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import os
+from src.utils.schema import validate_schema
+
 
 def generate_athlete_embeddings(
         input_path="data/processed/clean_athletes.csv",
@@ -11,6 +13,13 @@ def generate_athlete_embeddings(
 
     print("Generating athlete embeddings...")
     df = pd.read_csv(input_path)
+
+    validate_schema(
+    df,
+    ["id", "name", "sex", "sport", "event"],
+    df_name="clean_athletes.csv"
+)
+
 
     # Vectorized text creation (fast)
     def safe(x): 

@@ -2,6 +2,8 @@
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from src.utils.schema import validate_schema
+
 
 def generate_event_embeddings(
     input_path="data/processed/clean_athletes.csv",
@@ -11,6 +13,13 @@ def generate_event_embeddings(
     print("Generating event embeddings...")
 
     df = pd.read_csv(input_path)
+    
+    validate_schema(
+    df,
+    ["sport", "event", "sex"],
+    df_name="clean_athletes.csv (event embeddings)"
+)
+
 
     event_meta = (
         df.groupby("event")

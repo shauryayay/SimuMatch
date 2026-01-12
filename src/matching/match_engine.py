@@ -2,12 +2,21 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import re
+from src.utils.schema import validate_schema
+
 
 # -----------------------------
 # Load data
 # -----------------------------
 athlete_df = pd.read_csv("data/processed/athletes_with_embeddings.csv")
+validate_schema(
+    athlete_df,
+    ["id", "name", "sex", "sport", "event", "emb"],
+    df_name="athletes_with_embeddings.csv"
+)
+
 event_df   = pd.read_csv("data/processed/events_with_embeddings.csv")
+
 
 # Load embeddings
 ath_embeddings  = np.load("data/athlete_vectors.npy", allow_pickle=True)
