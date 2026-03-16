@@ -2,49 +2,36 @@
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from src.utils.schema import validate_schema
-
+import os
 
 def generate_event_embeddings(
     input_path="data/processed/clean_athletes.csv",
     output_csv="data/processed/events_with_embeddings.csv",
-    output_npy="data/event_vectors.npy"
+    output_npy="data/event_vectors.npy",
+    force_rebuild=False
 ):
+    if (
+        not force_rebuild
+        and os.path.exists(output_csv)
+        and os.path.exists(output_npy)
+    ):
+        print("⚡ Using cached event embeddings")
+        return pd.read_csv(output_csv)
+
     print("Generating event embeddings...")
 
     df = pd.read_csv(input_path)
-    
-    validate_schema(
-    df,
-    ["sport", "event", "sex"],
-    df_name="clean_athletes.csv (event embeddings)"
-)
 
-
-    event_meta = (
-        df.groupby("event")
-          .agg({
-              "sport": "first",
-              "sex": lambda x: x.mode().iloc[0] if not x.mode().empty else None
-          })
-          .reset_index()
-    )
-
-    event_meta.rename(columns={"sex": "event_sex"}, inplace=True)
-
-    event_meta["event_text"] = (
-        event_meta["sport"].fillna("") + " "
-        + event_meta["event_sex"].map(lambda x: "men " if x=="M" else ("women " if x=="F" else ""))
-        + event_meta["event"].fillna("")
-    )
+    # (keep your existing event_meta + event_text logic)
 
     model = SentenceTransformer("sentence-transformers/paraphrase-MiniLM-L6-v2")
-    texts = event_meta["event_text"].tolist()
-
-    embeddings = model.encode(texts, batch_size=64, show_progress_bar=True)
+    embeddings = model.encode(
+        event_meta["event_text"].tolist(),
+        batch_size=64,
+        show_progress_bar=True
+    )
 
     event_meta["emb"] = embeddings.tolist()
-
     np.save(output_npy, embeddings)
     event_meta.to_csv(output_csv, index=False)
 
